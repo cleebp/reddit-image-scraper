@@ -71,7 +71,7 @@ def _save_gif(gif_match, gif_path):
     name = url.split('/')[-1]
     if 'gfycat' in url:
         url = 'https://giant.gfycat.com/' + name
-    elif 'imgur' in gif_match:
+    elif 'imgur' in url:
         url = 'https://i.imgur.com/' + name
     else:
         print('Error saving gif, skipping...')
