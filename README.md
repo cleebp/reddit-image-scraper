@@ -1,14 +1,23 @@
 # Reddit Image Scraper
 
-Python script to crawl over given multireddit links and dowload all top images.
+Python script to crawl over given subreddit or multireddit links and download all top images and gifs locally.
 
 ## How to Run
 
-Grab chromedriver and place it in your project root:
-- http://chromedriver.chromium.org/downloads
+Install chromedriver:
+- `brew tap homebrew/cask`
+- `brew cask install chromedriver`
 
-Simply:
+Install requirements:
 - `python3 -m venv venv`
 - `source venv/bin/activate`
 - `pip install -r requirements.txt`
+
+Setup your config file:
+- `cp src/config_default.py src/config.py`
+- Add subreddit or multireddit links
+
+Run the scraper:
 - `python src/run.py`
+- ...
+- _profit?_

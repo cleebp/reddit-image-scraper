@@ -1,4 +1,4 @@
-from os import path
+import os
 from time import sleep
 import re
 from urllib.request import urlretrieve, HTTPError
@@ -9,32 +9,40 @@ from config import *
 
 
 def initialize():
-    buffer = 0.25
-    driver = webdriver.Chrome(executable_path='/Users/brain/Sandbox/reddit-image-scraper/chromedriver')  # TODO: Grab this automagically
-    dir_path = '/Users/brain/Sandbox/reddit-image-scraper/scrapes/'  # TODO: grab this by '../scrapes'.fullpath
-    return buffer, driver, dir_path
+    driver = webdriver.Chrome('/usr/local/bin/chromedriver')
+    dir_path = os.path.join(os.getcwd(), 'scrapes/')
+    init_folders(dir_path)
+
+    return driver, dir_path
 
 
-def scrape(buffer, driver, dir_path):
+def init_folders(dir_path):
+    _create_if_not_exists(dir_path)
+    for path in URLS:
+        sub_path = dir_path + path.split('/')[-1]
+        _create_if_not_exists(sub_path)
+        _create_if_not_exists(sub_path + '/img/')
+        _create_if_not_exists(sub_path + '/mp4/')
+
+
+def scrape(driver, dir_path):
     first_pass = True
-    for url_base in URLS:
-        print(f'=== Beginning scrape of {url_base} ===')
-        url = str(url_base) + TOP_BASE + TOP_ALL  # TODO: grab TOP_ALL/MONTH/etc from command line arg
+    for path in URLS:
+        print(f'=== Beginning scrape of {path} ===')
+        url = str(path) + TOP_BASE + TOP_YEAR  # TODO: grab TOP_ALL/MONTH/etc from command line arg
         driver.get(url)
-        sleep(1)
+        sleep(SCRAPE_BUFFER)
 
         # turn off auto slides
         if first_pass:
             driver.find_element_by_id('autoNextSlide').click()
             first_pass = False
-            sleep(buffer)
+            sleep(SCRAPE_BUFFER)
 
-        # TODO: see if search id is a folder in PATH
-        #  - if not create it
-        img_path = dir_path + url_base.split('/')[-1] + '/img/'
-        gif_path = dir_path + url_base.split('/')[-1] + '/mp4/'
+        img_path = dir_path + path.split('/')[-1] + '/img/'
+        gif_path = dir_path + path.split('/')[-1] + '/mp4/'
 
-        for i in range(SCRAPE_TIME):
+        for i in range(SCRAPE_ITERATIONS):
             html = driver.execute_script("return document.body.innerHTML")
             img_match = re.search('url\\(&quot;(.*?)&quot;', html)
             gif_match = re.search('src=\\"(.*?)\\.mp4', html)
@@ -51,12 +59,17 @@ def scrape(buffer, driver, dir_path):
         sleep(1)
 
 
+def _create_if_not_exists(path):
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+
 def _save_image(img_match, img_path):
     if img_match:
         url = img_match.group(1)
         name = url[re.search('.*//.*/(.*?)', url).regs[0][1]:]
         full_path = str(img_path) + str(name)
-        if not path.exists(full_path) and name:
+        if not os.path.exists(full_path) and name:
             try:
                 urlretrieve(url, full_path)
                 print(f'New image found, saving image {name}.')
@@ -78,7 +91,7 @@ def _save_gif(gif_match, gif_path):
         return
 
     full_path = str(gif_path) + str(name)
-    if not path.exists(full_path) and name:
+    if not os.path.exists(full_path) and name:
         try:
             urlretrieve(url, full_path)
             print(f'New gif found, saving gif {name}.')
@@ -90,11 +103,11 @@ def _save_gif(gif_match, gif_path):
 
 def _next_image():
     driver.find_element_by_id('nextButton').click()
-    sleep(buffer)
+    sleep(SCRAPE_BUFFER)
 
 
 if __name__ == '__main__':
-    buffer, driver, dir_path = initialize()
-    scrape(buffer, driver, dir_path)
+    driver, dir_path = initialize()
+    scrape(driver, dir_path)
     driver.close()
     driver.quit()
